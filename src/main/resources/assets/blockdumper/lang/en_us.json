@@ -1,0 +1,15 @@
+{
+  "blockdumper.narrator.button.blockdumper": "Block Dumper",
+  "blockdumper.title": "Block Dumper",
+  "blockdumper.warning.epilepsy": "BlockDumper piggybacks Minecraft's rendering system. All renders appear on-screen.\nIf you are prone to seizures due to flashing lights, please exercise caution.",
+  "blockdumper.options.rendersize": "Render Size",
+  "blockdumper.options.rendersize.value": "%spx",
+  "blockdumper.options.rendersize.min": "%spx (min)",
+  "blockdumper.options.rendersize.max": "%spx (max)",
+  "blockdumper.options.rendersize.preview": "Preview render",
+  "blockdumper.options.rendersize.fit": "Make sure preview fits on screen!",
+  "blockdumper.render.title": "Render Progress",
+  "blockdumper.render.active": "Current item: ",
+  "blockdumper.render.progress": "%0000.f/%s",
+  "blockdumper.render.too_small": "Window too small! Please expand it so the render fits."
+}

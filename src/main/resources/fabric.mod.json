@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "${modId}",
+  "version": "${version}",
+  "name": "${modName}",
+  "description": "A mod.",
+  "authors": [
+    "Jikoo"
+  ],
+  "contact": {
+    "sources": "https://github.com/Jikoo/${modId}"
+  },
+  "icon": "assets/${modId}/icon.png",
+  "license": "Unlicense",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.github.jikoo.blockdumper.BlockDumperMod"
+    ]
+  },
+  "mixins": [
+    "${modId}.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.14.6",
+    "fabric": "*",
+    "minecraft": "~1.19",
+    "java": ">=17"
+  }
+}
