@@ -1,8 +1,10 @@
 package com.github.jikoo.blockdumper;
 
+import com.github.jikoo.blockdumper.render.SaveQueue;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,7 +15,7 @@ public class BlockDumperMod implements ClientModInitializer {
 
   @Override
   public void onInitializeClient() {
-    // TODO is this needed? Entry via title screen mixin
+    ClientLifecycleEvents.CLIENT_STOPPING.register(event -> SaveQueue.kill());
   }
 
 }

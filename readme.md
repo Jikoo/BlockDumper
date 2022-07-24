@@ -3,7 +3,8 @@
 BlockDumper is a Fabric client mod that renders all items as they appear in inventory, saving them to `.png` files.
 
 **Epilepsy warning: BlockDumper piggybacks Minecraft's rendering system. All renders appear on-screen.  
-If you are prone to seizures due to flashing lights, please exercise caution.**
+If you are prone to seizures due to flashing lights, please exercise caution, particularly with large renders.**
+This warning will also display ingame prior to renders running.
 
 ## Features
 
@@ -17,3 +18,4 @@ Also render items, because I needed both.
 * Render all block states
 * Render specifiable subsets of items
 * Features, customizability, accessibility, etc.
+* Fix off-by-one render locations for certain window sizes

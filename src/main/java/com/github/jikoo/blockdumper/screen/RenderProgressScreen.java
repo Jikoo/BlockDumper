@@ -3,8 +3,10 @@ package com.github.jikoo.blockdumper.screen;
 import com.github.jikoo.blockdumper.BlockDumperMod;
 import com.github.jikoo.blockdumper.data.DumperSettings;
 import com.github.jikoo.blockdumper.render.RenderHelper;
+import com.github.jikoo.blockdumper.render.SaveQueue;
+import com.github.jikoo.blockdumper.render.WindowToPng;
 import java.io.File;
-import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
@@ -26,9 +28,9 @@ public class RenderProgressScreen extends Screen {
   //  - separate save queue that dumps the images - image creation isn't too heavy, saving is
   private static final int TEXT_COLOR = 0xffffff;
   private final Screen parent;
-  private final DumperSettings settings;
   private final List<Item> items;
   private final int size;
+  private final int renderSize;
   private ButtonWidget completeButton;
   private int index = 0;
   private int lastRenderStartX = -1; // TODO make this less messy, boolean or something
@@ -36,22 +38,36 @@ public class RenderProgressScreen extends Screen {
   public RenderProgressScreen(@NotNull Screen parent, @NotNull DumperSettings settings) {
     super(Text.translatable("blockdumper.render.title"));
     this.parent = parent;
-    this.settings = settings;
     // skip index 0, air.
     items = Registry.ITEM.stream().skip(1).toList();
     size = items.size();
+    renderSize = settings.renderSize.getValue();
   }
 
   @Override
   public void render(MatrixStack matrices, int mouseX, int mouseY, float delta) {
-    saveScreenshot();
-    clearBackground();
-    renderCurrent(matrices);
+    if (hasAvailableMemory()) {
+      saveScreenshot();
+      clearBackground();
+      renderCurrent(matrices);
+    } else {
+      drawCenteredText(matrices, textRenderer, Text.translatable("blockdumper.render.low_memory"), width / 2, 50, 0xff0000);
+    }
     completeButton.render(matrices, mouseX, mouseY, delta);
   }
 
+  private boolean hasAvailableMemory() {
+    Runtime runtime = Runtime.getRuntime();
+    long freeMemory = runtime.maxMemory() - runtime.totalMemory() + runtime.freeMemory();
+    // Expect to consume more memory than we explicitly need - other objects are also created,
+    // some not on the current thread.
+    long expectedConsumption = 256L * renderSize * renderSize * 4;
+
+    return freeMemory > expectedConsumption;
+  }
+
   protected void saveScreenshot() {
-    if (index <= 1 || index > size || lastRenderStartX < 0) {
+    if (index <= 0 || index > size || lastRenderStartX < 0) {
       return;
     }
 
@@ -60,13 +76,16 @@ public class RenderProgressScreen extends Screen {
         .resolve(
             Path.of("blockdumper", "out", items.get(index - 1).getTranslationKey() + ".png"))
         .toFile();
-    int renderSize = settings.renderSize.getValue();
 
-    try {
-      RenderHelper.saveScreenshot(window, output, lastRenderStartX, RenderHelper.ITEM_RENDER_START, renderSize);
-    } catch (IOException e) {
-      BlockDumperMod.LOGGER.error("Caught exception writing to PNG", e);
-      index = size;
+    if (hasAvailableMemory()) {
+      // Double check available memory, crashing is bad.
+      int startY = window.getHeight() - RenderHelper.scaleInt(window, RenderHelper.ITEM_RENDER_START) - renderSize;
+      ByteBuffer data = WindowToPng.readWindowPixels(lastRenderStartX, startY, renderSize, renderSize);
+
+      SaveQueue.add(new WindowToPng(data, renderSize, renderSize, output));
+      ++postedRenders;
+    } else {
+      --index;
     }
   }
 
@@ -107,9 +126,8 @@ public class RenderProgressScreen extends Screen {
 
     Item currentItem = items.get(index);
 
-    RenderHelper.renderItem(currentItem, settings.renderSize.getValue());
+    RenderHelper.renderItem(currentItem, renderSize);
 
-    int renderSize = settings.renderSize.getValue();
     Window window = Objects.requireNonNull(client).getWindow();
     if (!RenderHelper.willItemRenderFitWindow(window, renderSize)) {
       lastRenderStartX = -1;
@@ -144,7 +162,10 @@ public class RenderProgressScreen extends Screen {
             200,
             20,
             ScreenTexts.CANCEL,
-            (button) -> Objects.requireNonNull(client).setScreen(this.parent));
+            (button) -> {
+              SaveQueue.kill();
+              Objects.requireNonNull(client).setScreen(this.parent);
+            });
     this.addDrawableChild(completeButton);
   }
 

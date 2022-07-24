@@ -11,5 +11,6 @@
   "blockdumper.render.title": "Render Progress",
   "blockdumper.render.active": "Current item: ",
   "blockdumper.render.progress": "%0000.f/%s",
-  "blockdumper.render.too_small": "Window too small! Please expand it so the render fits."
+  "blockdumper.render.too_small": "Window too small! Please expand it so the render fits.",
+  "blockdumper.render.low_memory": "Low on memory. Waiting for garbage collection to free more..."
 }

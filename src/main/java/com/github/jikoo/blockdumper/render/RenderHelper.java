@@ -3,14 +3,7 @@ package com.github.jikoo.blockdumper.render;
 import com.github.jikoo.blockdumper.mixin.MixinItemRenderer;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
-import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.file.Files;
-import javax.imageio.ImageIO;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.DiffuseLighting;
 import net.minecraft.client.render.OverlayTexture;
@@ -24,8 +17,6 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.PlayerScreenHandler;
 import org.jetbrains.annotations.NotNull;
-import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL11;
 
 public final class RenderHelper {
 
@@ -54,9 +45,9 @@ public final class RenderHelper {
     Window window = client.getWindow();
     // Don't inline these - IDE warns about int division in floating point context, but we want to
     // grab our screenshot from a consistent location relative to the render.
-    float scaledSize = (float) (renderSize / window.getScaleFactor());
-    int scaledXCenter = window.getScaledWidth() / 2;
-    int scaledYStart = (int) (ITEM_RENDER_START + scaledSize / 2);
+    int scaledSize = (int) (renderSize / window.getScaleFactor());
+    int scaledXCenter = ((int) (window.getWidth() / window.getScaleFactor())) / 2;
+    int scaledYStart = ITEM_RENDER_START + scaledSize / 2;
     matrixStack.translate(scaledXCenter, scaledYStart, 100.0F + renderer.zOffset);
     matrixStack.scale(1.0F, -1.0F, 1.0F);
     matrixStack.scale(scaledSize, scaledSize, scaledSize);
@@ -106,25 +97,10 @@ public final class RenderHelper {
       int scaledX,
       int unscaledY,
       int renderSize)
-      throws IOException {
-    int startY = window.getHeight() - (int) (unscaledY * window.getScaleFactor()) - renderSize;
+      throws OutOfMemoryError {
+    int startY = window.getHeight() - scaleInt(window, unscaledY) - renderSize;
 
-    BufferedImage image = new BufferedImage(renderSize, renderSize, BufferedImage.TYPE_INT_ARGB);
-    Graphics graphics = image.getGraphics();
-    ByteBuffer buffer = BufferUtils.createByteBuffer(renderSize * renderSize * 4);
-
-    GL11.glReadPixels(scaledX, startY, renderSize, renderSize, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buffer);
-    buffer.rewind();
-
-    for (int localHeight = 0; localHeight < renderSize; ++localHeight) {
-      for (int localWidth = 0; localWidth < renderSize; ++localWidth) {
-        graphics.setColor(new Color(buffer.get() & 0xff, buffer.get() & 0xff, buffer.get() & 0xff, buffer.get() & 0xff));
-        graphics.drawRect(localWidth, renderSize - localHeight, 1, 1);
-      }
-    }
-
-    Files.createDirectories(output.getParentFile().toPath());
-    ImageIO.write(image, "png", output);
+    SaveQueue.add(new WindowToPng(WindowToPng.readWindowPixels(scaledX, startY, renderSize, renderSize), renderSize, renderSize, output));
   }
 
   private RenderHelper() {
